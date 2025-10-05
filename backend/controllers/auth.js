@@ -6,6 +6,7 @@ const { validationResult } = require('express-validator')
 
 exports.signup = catchAsync(async (req, res, next) => {
     const errors = validationResult(req);
+    console.log(errors)
     if (!errors.isEmpty()) {
        const error = new Error('Validation failed.');
        error.statusCode = 422;

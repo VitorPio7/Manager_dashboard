@@ -8,7 +8,6 @@ router.put(
     '/signup',
     [
         body('email')
-            .escape()
             .notEmpty()
             .isEmail()
             .withMessage('Please enter a valid email')
