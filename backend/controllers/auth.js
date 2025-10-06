@@ -89,7 +89,6 @@ exports.confirm = catchAsync(async (req, res, next) => {
 
 exports.login = catchAsync(async (req, res, next) => {
     const errors = validationResult(req);
-
     if (!errors.isEmpty()) {
         const error = new Error(errors.array()[0].msg);
         error.statusCode = 422;
@@ -115,7 +114,10 @@ exports.login = catchAsync(async (req, res, next) => {
     );
     res.status(200).json({
         token: token,
-        mensage:"Successful login",
+        mensage: "Successful login",
         userId: user._id.toString()
     })
+})
+exports.passwordRedefinition = catchAsync(async (req, res, next) => {
+
 })
