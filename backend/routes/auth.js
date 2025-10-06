@@ -48,13 +48,6 @@ router.post('/login', [
         .isEmail()
         .escape()
         .withMessage("Please enter a valid email")
-        .custom(async value => {
-            const user = await User.findOne({ email: value })
-            if (!user) {
-                throw new Error("This email doesn't exist.")
-            }
-            return true;
-        })
         .normalizeEmail(),
     body('password')
         .escape()

@@ -9,14 +9,14 @@ require('dotenv').config()
 
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({extended:false}))
+app.use(express.urlencoded({ extended: false }))
 app.use('/auth', authRotes)
 //app.use('products', products);
 app.use((error, req, res, next) => {
     console.error(error);
     const status = error.statusCode || 500;
     const message = error.message || 'Something went wrong.';
-    res.status(status).json({ message })
+    res.status(status).json({ message, status })
 })
 mongoose
     .connect(process.env.MONGODB_URI)

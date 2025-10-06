@@ -89,11 +89,33 @@ exports.confirm = catchAsync(async (req, res, next) => {
 
 exports.login = catchAsync(async (req, res, next) => {
     const errors = validationResult(req);
-    if(!errors.isEmpty()) {
+
+    if (!errors.isEmpty()) {
         const error = new Error(errors.array()[0].msg);
         error.statusCode = 422;
         error.data = errors.array();
         throw error;
     }
+
     const { email, password } = req.body;
+
+    const user = await User.findOne({ email: email });
+
+    const isEqual = await bcrypt.compare(password, user.password);
+
+    if (!user || !isEqual) {
+        const error = new Error('The password/email is wrong')
+        error.statusCode = 401;
+        throw error;
+    }
+    const token = jwt.sign(
+        { email: user.email, userId: user._id.toString() },
+        process.env.TOKEN_JWT,
+        { expiresIn: '1h' }
+    );
+    res.status(200).json({
+        token: token,
+        mensage:"Successful login",
+        userId: user._id.toString()
+    })
 })
