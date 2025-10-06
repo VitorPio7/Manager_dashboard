@@ -14,6 +14,12 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    isActive: {
+        type: Boolean,
+        default: false
+    },
+    confirmationToken: String,
+    tokenExpires: Date,
     products: [
         {
             type: Schema.Types.ObjectId,
