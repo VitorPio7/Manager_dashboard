@@ -16,9 +16,10 @@ const userSchema = new Schema({
     },
     isActive: {
         type: Boolean,
-        default: false
+        default: false,
     },
     confirmationToken: String,
+    tokenRedefinition: String,
     tokenExpires: Date,
     products: [
         {

@@ -9,6 +9,7 @@ router.post(
     '/signup',
     [
         body('email')
+            .notEmpty()
             .isEmail()
             .escape()
             .withMessage('Please enter a valid email')
@@ -21,6 +22,7 @@ router.post(
             })
             .normalizeEmail(),
         body('password')
+            .notEmpty()
             .escape()
             .trim()
             .isStrongPassword(
@@ -35,9 +37,9 @@ router.post(
             .withMessage('The password has to be minimum of 5 words, numbers or symbols.')
         ,
         body('name')
+            .notEmpty()
             .escape()
             .isString()
-            .notEmpty()
             .isLength({ min: 3, max: 30 })
             .withMessage('The name has to be minimum of 3 and maximum 30 words')
     ],
@@ -46,6 +48,7 @@ router.post(
 router.patch('/confirm/:token', authController.confirm)
 router.post('/login', [
     body('email')
+        .notEmpty()
         .isEmail()
         .escape()
         .withMessage("Please enter a valid email")
@@ -53,4 +56,31 @@ router.post('/login', [
     body('password')
         .escape()
 ], authController.login);
+router.post('/changePassword', [
+    body('email')
+        .notEmpty()
+        .isEmail()
+        .escape()
+        .withMessage('Please enter a valid email.')
+        .normalizeEmail()
+],
+    authController.passwordRedefinition)
+
+router.post('/changePassword/:token', [
+    body('password')
+        .notEmpty()
+        .escape()
+        .trim()
+        .isStrongPassword(
+            {
+                minLength: 10,
+                minLowercase: 2,
+                minUppercase: 1,
+                minNumbers: 2,
+                minSymbols: 1
+            }
+        )
+        .withMessage('The password has to be minimum of 5 words, numbers or symbols.')
+], authController.confirmRedefinition)
+
 module.exports = router

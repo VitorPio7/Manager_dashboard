@@ -43,7 +43,8 @@ exports.signup = catchAsync(async (req, res, next) => {
         to: email,
         from: 'vitorvpio60@gmail.com',
         subject: 'Confirm your account!!!',
-        text: confirmLink
+        text: confirmLink,
+        html: '<h1>This is your link to change the password.</h1>'
     }
     await emailSendGrid
         .send(emailContent)
@@ -104,7 +105,7 @@ exports.login = catchAsync(async (req, res, next) => {
 
     if (!user || !isEqual) {
         const error = new Error('The password/email is wrong')
-        error.statusCode = 401;
+        error.statusCode = 422;
         throw error;
     }
     const token = jwt.sign(
@@ -119,5 +120,76 @@ exports.login = catchAsync(async (req, res, next) => {
     })
 })
 exports.passwordRedefinition = catchAsync(async (req, res, next) => {
+    const errors = validationResult(req);
+    const email = req.body.email;
+    console.log(email)
 
+    if (!errors.isEmpty()) {
+        const error = new Error(errors.array()[0].msg);
+        error.statusCode = 422;
+        error.data = errors.array();
+        throw error;
+    }
+
+    const user = await User.findOne({ email })
+
+    if (!user) {
+        const error = new Error("This Email doesn't exist!!!")
+        error.statusCode = 401
+        throw error
+    }
+    const token = crypto.randomBytes(32).toString('hex');
+
+    const confirmLink = `http://localhost:3000/auth/changePassword/${token}`
+
+    const emailContent = {
+        to: email,
+        from: 'vitorvpio60@gmail.com',
+        subject: 'This is your link to change the password!!!',
+        text: confirmLink,
+        html: `div >
+                 <h1>This is your link to change the password.</h1>
+                 <p>${confirmLink}</p>    
+              </div >`
+    }
+    user.tokenRedefinition = token;
+
+    await user.save();
+
+    await emailSendGrid
+        .send(emailContent)
+        .then(() => {
+            console.log(`Email sent for ${email}`)
+        })
+        .catch((error) => {
+            console.log(error)
+        })
+
+    res.status(200)
+        .json({
+            mensage: "The link to change the password was sent!!!",
+            status: 200
+        })
+})
+exports.confirmRedefinition = catchAsync(async (req, res, next) => {
+    const confirmToken = req.params.token;
+
+    const { password } = req.body;
+    console.log(confirmToken)
+    const user = await User.findOne({ tokenRedefinition: confirmToken })
+
+    if (!user) {
+        const error = new Error("This Token doesn't exist!!!")
+        error.statusCode = 401
+        throw error
+    }
+    const hashedPw = await bcrypt.hash(password, 12);
+    
+    user.password = hashedPw;
+
+    await user.save();
+
+    res.status(200).json({
+        mensage: 'The password was changed!!!'
+    })
 })
