@@ -186,7 +186,7 @@ exports.confirmRedefinition = catchAsync(async (req, res, next) => {
     const hashedPw = await bcrypt.hash(password, 12);
     
     user.password = hashedPw;
-
+    user.tokenRedefinition = undefined
     await user.save();
 
     res.status(200).json({

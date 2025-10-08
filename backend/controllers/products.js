@@ -47,6 +47,27 @@ exports.createProduct = catchAsync(async (req, res, next) => {
 
    res.status(201).json({
       message: 'Product created',
-      product: product
+      data: product
    })
 })
+exports.getProduct = catchAsync(async (req, res, next) => {
+   const idProduct = req.params.product;
+   console.log(idProduct)
+   const findUser = await User.findById(req.userId).populate('products');
+   if (!findUser) {
+      const error = new Error("There's no user with products!!!")
+      error.statusCode = 404;
+      throw error;
+   }
+   const findProduct = findUser.products.find((el)=>el._id == idProduct);
+   if (!findProduct) {
+      const error = new Error("There's no product with this id!!!");
+      error.statusCode = 404;
+      throw error;
+   }
+   res.status(201).json({
+      message: 'Data succesfully loaded!!!',
+      data: findProduct
+   })
+})
+exports.updateProduct

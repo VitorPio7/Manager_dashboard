@@ -25,5 +25,6 @@ router.post("/createProduct", isAuth, [
         .notEmpty()
         .escape()
         .withMessage("Please enter a valid image!!!")
-] ,productsController.createProduct)
+], productsController.createProduct);
+router.get("/:product", isAuth, productsController.getProduct)
 module.exports = router;
