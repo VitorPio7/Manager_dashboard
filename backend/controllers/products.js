@@ -6,15 +6,15 @@ const path = require("path");
 const fs = require("fs");
 
 exports.getAllProducts = catchAsync(async (req, res, next) => {
-   const findUser = await User.findById(req.userId).populate('products');
-   if (!findUser) {
+   const findProduct = await Products.find();
+   if (!findProduct) {
       const error = new Error("There's no user with products!!!")
       error.statusCode = 404;
       throw error;
    }
    res.status(200).json({
       message: 'You received the data!!!',
-      data: findUser.products
+      data: findProduct
    })
 })
 exports.createProduct = catchAsync(async (req, res, next) => {
@@ -55,13 +55,7 @@ exports.createProduct = catchAsync(async (req, res, next) => {
 exports.getProduct = catchAsync(async (req, res, next) => {
    const idProduct = req.params.product;
    console.log(idProduct)
-   const findUser = await User.findById(req.userId).populate('products');
-   if (!findUser) {
-      const error = new Error("There's no user with products!!!")
-      error.statusCode = 404;
-      throw error;
-   }
-   const findProduct = findUser.products.find((el)=>el._id == idProduct);
+   const findProduct = await Products.findById(idProduct);
    if (!findProduct) {
       const error = new Error("There's no product with this id!!!");
       error.statusCode = 404;
@@ -91,14 +85,18 @@ exports.updateProduct = catchAsync(async (req, res, next) => {
       imageUrl = req.file.path;
    }
   
-   const findProduct = await Products.findById(postId);
+   const findProduct = await Products.findById(postId).populate('creator');
   
    if(!findProduct) {
       const error = new Error('Could not find the product with this id!!!')
       error.statusCode = 404;
       throw error;
    }
-  
+  if(findProduct.creator.toString() !== req.userId){
+   const error = new Error("You're not authorized to update this product!!!")
+   error.statusCode = 403;
+   throw error;
+  }
    if(imageUrl !== findProduct.imageUrl) {
       filePath = path.join(__dirname,'..',findProduct.imageUrl);
       fs.unlink(filePath, err => console.log(err));

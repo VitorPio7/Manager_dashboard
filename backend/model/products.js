@@ -19,6 +19,11 @@ const products = new Schema(
             type: Number,
             required: true
         },
+        creator: {
+            type: Schema.Types.ObjectId,
+            ref:'User',
+            required: true
+        }
 
     },
     { timestamps: true }
