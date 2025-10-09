@@ -135,13 +135,13 @@ exports.deleteProduct = catchAsync(async (req, res, next) => {
    if (!findProductId) {
       const error = new Error("There is no product with this id!!!")
       error.statusCode = 404;
-      throw new error;
+      throw error;
    }
 
    if (findProductId.creator._id.toString() !== req.userId) {
       const error = new Error("You are not authorized to delete!!!")
       error.message = 403
-      throw new error;
+      throw  error;
    }
 
    await Products.findByIdAndDelete(productId);
@@ -154,7 +154,7 @@ exports.deleteProduct = catchAsync(async (req, res, next) => {
 
    user.products.pull(productId);
 
-   await save();
+   await user.save();
 
    res.status(200).json({
       message: 'Post deleted!!!'
