@@ -80,6 +80,7 @@ exports.confirm = catchAsync(async (req, res, next) => {
     user.isActive = true;
 
     user.confirmationToken = undefined;
+    user.tokenExpires = undefined
 
     await user.save();
 

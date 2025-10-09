@@ -30,12 +30,17 @@ router.post("/createProduct", isAuth, [
         .isInt()
         .escape()
         .withMessage("Please enter a valid quantity!!!"),
+    body("category")
+        .notEmpty()
+        .isString()
+        .escape()
+        .withMessage("Please enter a valid category"),
     body("imageUrl").custom((value, { req }) => {
-        if (!value && !req.file) {
-            throw new Error("Please provide an image!");
-        }
-        return true;
-    })
+            if (!value && !req.file) {
+                throw new Error("Please provide an image!");
+            }
+            return true;
+        })
 ], productsController.createProduct);
 
 
@@ -60,6 +65,11 @@ router.patch("/:product", isAuth, [
         .isNumeric()
         .escape()
         .withMessage("Please enter a valid price!!!"),
+    body("category")
+        .notEmpty()
+        .isString()
+        .escape()
+        .withMessage("Please enter a valid category"),    
     body("quantity")
         .notEmpty()
         .isInt()
@@ -74,3 +84,5 @@ router.patch("/:product", isAuth, [
 
 ], productsController.updateProduct);
 module.exports = router;
+
+router.delete("/:product", isAuth, productsController.deleteProduct)
