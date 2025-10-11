@@ -1,6 +1,5 @@
 # Manager Dashboard API
 
-> Robust backend for a management dashboard — faithful to the original repository.
 
 ---
 
