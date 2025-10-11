@@ -1,7 +1,7 @@
 # Manager Dashboard API
 
 
----
+
 
 ## About the Project
 
