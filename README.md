@@ -45,7 +45,6 @@ Manager_dashboard/
 └─ README.md
 ```
 
-> Note: The structure shown reflects the intended setup. Adjust paths and filenames according to your actual implementation in `backend/`.
 
 ---
 
@@ -99,8 +98,6 @@ node index.js
 # or
 npm start
 ```
-
-> `npm run dev` assumes `nodemon` is configured in your `package.json`. Adjust if needed.
 
 ---
 
