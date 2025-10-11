@@ -10,6 +10,8 @@ const mongoose = require('mongoose');
 
 const cors = require('cors');
 
+const helmet = require('helmet');
+
 const app = express();
 
 const multer = require('multer');
@@ -22,7 +24,7 @@ const fileStorage = multer.diskStorage({
         cb(null, 'images')
     },
     filename: (req, file, cb) => {
-        cb(null, new Date().toISOString().replace(/:/g,'-') + '-' + file.originalname)
+        cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname)
     }
 })
 const fileFilter = (req, file, cb) => {
@@ -45,6 +47,11 @@ app.use(multer(
 app.use('/images', express.static(path.join(__dirname, 'images')))
 
 app.use(cors());
+
+app.options('*', cors());
+
+app.use(helmet())
+
 
 app.use(express.json());
 

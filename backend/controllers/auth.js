@@ -44,7 +44,7 @@ exports.signup = catchAsync(async (req, res, next) => {
         from: 'vitorvpio60@gmail.com',
         subject: 'Confirm your account!!!',
         text: confirmLink,
-        html: '<h1>This is your link to change the password.</h1>'
+        html: confirmLink
     }
     await emailSendGrid
         .send(emailContent)
@@ -148,10 +148,7 @@ exports.passwordRedefinition = catchAsync(async (req, res, next) => {
         from: 'vitorvpio60@gmail.com',
         subject: 'This is your link to change the password!!!',
         text: confirmLink,
-        html: `div >
-                 <h1>This is your link to change the password.</h1>
-                 <p>${confirmLink}</p>    
-              </div >`
+        html: confirmLink
     }
     user.tokenRedefinition = token;
 
