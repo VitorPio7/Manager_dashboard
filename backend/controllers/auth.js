@@ -1,86 +1,67 @@
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const User = require('../model/userDashboard');
-const catchAsync = require('../utils/catchAsync')
-const { validationResult } = require('express-validator')
-const emailSendGrid = require('@sendgrid/mail');
-require('dotenv').config()
 
-emailSendGrid.setApiKey(process.env.SENDGRID_API_KEY)
+const jwt = require('jsonwebtoken');
+
+const crypto = require('crypto');
+
+const User = require('../model/userDashboard');
+
+const catchAsync = require('../utils/catchAsync')
+
+const { validationResult } = require('express-validator')
+
+const emailSendGrid = require('@sendgrid/mail');
+
+const AppError = require('../utils/appError')
+
+const createSendToken = require('../utils/tokenGenerator')
+
+const emailConfig = require('../utils/email')
+
+require('dotenv').config('../config.env')
+
+
 
 exports.signup = catchAsync(async (req, res, next) => {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-        const error = new Error(errors.array()[0].msg);
-        error.statusCode = 422;
-        error.data = errors.array();
-        throw error;
-    }
-    const { email, name, password } = req.body
-
-    const token = crypto.randomBytes(32).toString('hex');
-
+    const { email, name, passwordConfirm, password } = req.body
     const expires = new Date(Date.now() + 1000 * 60 * 60 * 24);
-
-    const hashedPw = await bcrypt.hash(password, 12);
-
-    const user = new User({
-        email: email,
-        password: hashedPw,
-        name: name,
+    const tokenRedefinition = crypto.randomBytes(32).toString('hex');
+    const user = new User.create({
+        email,
+        name,
         isActive: false,
-        confirmationToken: token,
+        passwordConfirm,
+        password,
+        tokenRedefinition,
         tokenExpires: expires
     })
-
-    const result = await user.save();
-
-
-    const confirmLink = `http://localhost:3000/confirm/${token}`
-    const emailContent = {
-        to: email,
-        from: 'vitorvpio60@gmail.com',
-        subject: 'Confirm your account!!!',
-        text: confirmLink,
-        html: confirmLink
-    }
-    await emailSendGrid
-        .send(emailContent)
-        .then(() => {
-            console.log(`Email sent for ${email}`)
-        })
-        .catch((error) => {
-            console.log(error)
-        })
-
-    res.status(201).json({
-        message: `We sent the email for ${email} to confirm the account. `,
-        userId: result._id
-    })
+    emailConfig(`${req.protocol}://${req.get('host')}/confirm/${token}`,
+        email,
+        "It's important to verify your email.",
+        "Confirm your account!!!"
+    )
+    createSendToken.createSendToken(user, 200, req, res)
 })
 
 exports.confirm = catchAsync(async (req, res, next) => {
     const token = req.params.token;
-    console.log(token)
     const user = await User.findOne({ confirmationToken: token })
-    console.log(user)
     if (!user) {
-        const error = new Error("The user user with this token doesn't exist")
-        error.statusCode = 401;
-        throw error;
+        next(
+            AppError(
+                "The user user with this token doesn't exist",
+                401))
     }
     if (user.isActive) {
-        throw new Error('The account was already confirmed!')
+        next(
+            AppError(
+                "The user user with this token doesn't exist",
+                401))
     }
-    if (!user.confirmationToken) {
-        throw new Error('The token was expired or already used!');
-    }
+
     user.isActive = true;
 
     user.confirmationToken = undefined;
-    user.tokenExpires = undefined
 
     await user.save();
 
@@ -90,13 +71,6 @@ exports.confirm = catchAsync(async (req, res, next) => {
 })
 
 exports.login = catchAsync(async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        const error = new Error(errors.array()[0].msg);
-        error.statusCode = 422;
-        error.data = errors.array();
-        throw error;
-    }
 
     const { email, password } = req.body;
 
@@ -105,9 +79,7 @@ exports.login = catchAsync(async (req, res, next) => {
     const isEqual = await bcrypt.compare(password, user.password);
 
     if (!user || !isEqual) {
-        const error = new Error('The password/email is wrong')
-        error.statusCode = 422;
-        throw error;
+        return AppError('There is a problem in the login', 422)
     }
     const token = jwt.sign(
         { email: user.email, userId: user._id.toString() },
@@ -182,7 +154,7 @@ exports.confirmRedefinition = catchAsync(async (req, res, next) => {
         throw error
     }
     const hashedPw = await bcrypt.hash(password, 12);
-    
+
     user.password = hashedPw;
     user.tokenRedefinition = undefined
     await user.save();

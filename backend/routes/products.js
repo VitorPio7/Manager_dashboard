@@ -2,8 +2,6 @@ const express = require('express');
 
 const { body, param } = require('express-validator')
 
-const Products = require('../model/products');
-
 const productsController = require('../controllers/products')
 
 const isAuth = require('../middleware/is-auth');
@@ -11,9 +9,13 @@ const isAuth = require('../middleware/is-auth');
 const router = express.Router();
 
 
-router.get("/", isAuth, productsController.getAllProducts);
+router.get("/",
+    isAuth,
+    productsController.productsQueries,
+    productsController.getAllProducts);
 
 
+//Limpar essas rotas
 router.post("/createProduct", isAuth, [
     body("title")
         .notEmpty()
@@ -36,11 +38,11 @@ router.post("/createProduct", isAuth, [
         .escape()
         .withMessage("Please enter a valid category"),
     body("imageUrl").custom((value, { req }) => {
-            if (!value && !req.file) {
-                throw new Error("Please provide an image!");
-            }
-            return true;
-        })
+        if (!value && !req.file) {
+            throw new Error("Please provide an image!");
+        }
+        return true;
+    })
 ], productsController.createProduct);
 
 
@@ -69,7 +71,7 @@ router.patch("/:product", isAuth, [
         .notEmpty()
         .isString()
         .escape()
-        .withMessage("Please enter a valid category"),    
+        .withMessage("Please enter a valid category"),
     body("quantity")
         .notEmpty()
         .isInt()

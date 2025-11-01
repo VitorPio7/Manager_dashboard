@@ -6,18 +6,32 @@ const products = require('./routes/products');
 
 const path = require('path')
 
-const mongoose = require('mongoose');
+const morgan = require('morgan')
+
+const rateLimit = require('express-rate-limit');
 
 const cors = require('cors');
 
 const helmet = require('helmet');
 
+const globalErrorHandler = require('./controllers/errorController')
+
 const app = express();
 
 const multer = require('multer');
+const AppError = require('./utils/appError');
 
-require('dotenv').config()
+require('dotenv').config({ path: './config.env' })
 
+if (process.env.NODE_ENV === 'development') {
+    app.use(morgan('dev'))
+}
+
+const limiter = rateLimit({
+    max: 110,
+    widowMS: 60 * 60 * 1000,
+    message: 'Too many requests from this IP, please try again in an hour!'
+})
 
 const fileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -37,6 +51,8 @@ const fileFilter = (req, file, cb) => {
         cb(null, false)
     }
 }
+app.use('/api', limiter)
+
 app.use(multer(
     {
         storage: fileStorage,
@@ -48,30 +64,24 @@ app.use('/images', express.static(path.join(__dirname, 'images')))
 
 app.use(cors());
 
-app.options('*', cors());
-
 app.use(helmet())
-
 
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: false }))
 
-app.use('/auth', authRotes)
+app.use('/api/auth', authRotes)
 
-app.use('/products', products);
+app.use('/api/products', products);
 
-app.use((error, req, res, next) => {
-    console.error(error);
-    const status = error.statusCode || 500;
-    const message = error.message || 'Something went wrong.';
-    res.status(status).json({ message, status })
+app.all('*', (req, res, next) => {
+    next(
+        new AppError(`Can't find ${req.originalUrl} on this server!`, 401
+
+        )
+    )
 })
 
-mongoose
-    .connect(process.env.MONGODB_URI)
-    .then(() => {
-        app.listen(process.env.PORT,
-            () => console.log(`Server running on port ${process.env.PORT}`))
-    })
-    .catch((err) => console.log(err));
+app.use(globalErrorHandler);
+
+module.exports = app;
