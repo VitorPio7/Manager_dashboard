@@ -8,8 +8,6 @@ const User = require('../model/userDashboard');
 
 const catchAsync = require('../utils/catchAsync')
 
-const { validationResult } = require('express-validator')
-
 const emailSendGrid = require('@sendgrid/mail');
 
 const AppError = require('../utils/appError')
@@ -24,23 +22,20 @@ require('dotenv').config('../config.env')
 
 exports.signup = catchAsync(async (req, res, next) => {
     const { email, name, passwordConfirm, password } = req.body
-    const expires = new Date(Date.now() + 1000 * 60 * 60 * 24);
-    const tokenRedefinition = crypto.randomBytes(32).toString('hex');
     const user = new User.create({
         email,
         name,
         isActive: false,
         passwordConfirm,
         password,
-        tokenRedefinition,
-        tokenExpires: expires
+        tokenRedefinition
     })
     emailConfig(`${req.protocol}://${req.get('host')}/confirm/${token}`,
         email,
         "It's important to verify your email.",
         "Confirm your account!!!"
     )
-    createSendToken.createSendToken(user, 200, req, res)
+    createSendToken.createSendToken(user, 201, res)
 })
 
 exports.confirm = catchAsync(async (req, res, next) => {
@@ -74,42 +69,20 @@ exports.login = catchAsync(async (req, res, next) => {
 
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email: email });
-
-    const isEqual = await bcrypt.compare(password, user.password);
-
-    if (!user || !isEqual) {
+    const user = await User.findOne({ email: email }).select('+password');
+    
+    if (!user || !user.correctPassword(password, user.password)) {
         return AppError('There is a problem in the login', 422)
     }
-    const token = jwt.sign(
-        { email: user.email, userId: user._id.toString() },
-        process.env.TOKEN_JWT,
-        { expiresIn: '1h' }
-    );
-    res.status(200).json({
-        token: token,
-        mensage: "Successful login",
-        userId: user._id.toString()
-    })
+    createSendToken.createSendToken(user, 200, res)
 })
 exports.passwordRedefinition = catchAsync(async (req, res, next) => {
-    const errors = validationResult(req);
     const email = req.body.email;
-    console.log(email)
 
-    if (!errors.isEmpty()) {
-        const error = new Error(errors.array()[0].msg);
-        error.statusCode = 422;
-        error.data = errors.array();
-        throw error;
-    }
-
-    const user = await User.findOne({ email })
+    const user = await User.findOne({ email})
 
     if (!user) {
-        const error = new Error("This Email doesn't exist!!!")
-        error.statusCode = 401
-        throw error
+        return next(AppError('There is no user with this email adress', 404))
     }
     const token = crypto.randomBytes(32).toString('hex');
 

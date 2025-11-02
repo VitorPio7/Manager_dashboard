@@ -4,6 +4,11 @@ const Schema = mongoose.Schema;
 
 const validator = require('validator')
 
+const bcrypt = require('bcrypt')
+
+const crypto = require('crypto');
+
+
 const userSchema = new Schema({
     name: {
         type: String,
@@ -37,6 +42,9 @@ const userSchema = new Schema({
         default: false,
     },
     tokenRedefinition: String,
+    passwordChangeAt: Date,
+    passwordResetToken: String,
+    passwordResetExpires: Date,
     products: [
         {
             type: Schema.Types.ObjectId,
@@ -44,13 +52,49 @@ const userSchema = new Schema({
         }
     ]
 })
+
+
 userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next();
-    
+
     this.password = await bcrypt.hash(this.password, 12);
-    
+
     this.passwordConfirm = undefined;
-    
+
     next()
 })
+
+//Verify automatelly and registry if there is a change in the password
+userSchema.pre('save', function (next) {
+    if (!this.isModified('password') || this.isNew) return next();
+
+    this.passwordChangeAt = Date.now()
+})
+
+userSchema.methods.correctPassword = async function (inputPassword, userPassword) {
+    return await bcrypt.compare(inputPassword, userPassword)
+}
+// Verify when the user is logged, if there is a change in the password
+userSchema.methods.changedPasswordAfter = async function (JWTimestamp) {
+    if (this.passwordChangeAt) {
+        const changedTimestamp = parseInt(
+            //Convert the time in seconds because the JWTTImestamp is in seconds too
+            this.passwordChangeAt.getTime() / 1000,
+            10
+        )
+        return JWTimestamp < changedTimestamp
+    }
+    return false
+}
+userSchema.methods.createPasswordResetToken = function () {
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    this.passwordResetToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex')
+    //Now + 10 minutes
+    this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+    return resetToken
+}
 module.exports = mongoose.model('User', userSchema);
