@@ -24,4 +24,5 @@ router.post(
     protect,
     authController.updatePassword
 )
+
 module.exports = router

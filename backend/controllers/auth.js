@@ -11,9 +11,7 @@ const emailConfig = require('../utils/email')
 
 const crypto = require('crypto')
 
-const protect = require('../middleware/is-auth')
-
-require('dotenv').config('../config.env')
+require('dotenv').config({ path: '../config.env' })
 
 
 
@@ -71,14 +69,14 @@ exports.login = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email: email }).select('+password');
-  
+
     if (!user || !user.correctPassword(password, user.password)) {
         return AppError('There is a problem in the login', 422)
     }
 
     const resetToken = await user.verifyIfTheDateTokenPassed()
-   
-    if(resetToken) {
+
+    if (resetToken) {
         emailConfig(`${req.protocol}://${req.get('host')}/confirm/${token}`,
             email,
             "It's important to verify your email.",
@@ -110,6 +108,11 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
             "This is your token to reset the password",
 
         )
+        res.status(200).json({
+            status: 'success',
+            message: 'Token sent to email!'
+        });
+        
     } catch (error) {
         user.passwordResetToken = undefined;
         user.passwordResetExpires = undefined;
@@ -125,8 +128,16 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 exports.confirmRedefinition = catchAsync(async (req, res, next) => {
     const confirmToken = req.params.token;
 
+    const hashedToken = crypto
+        .createHash('sha256')
+        .update(confirmToken)
+        .digest('hex');
+
     const { password, passwordConfirm } = req.body;
-    const user = await User.findOne({ tokenRedefinition: confirmToken })
+    const user = await User.findOne({
+        tokenRedefinition: hashedToken,
+        passwordResetExpires: { $gt: Date.now() }
+    })
 
     if (!user) {
         return next(new AppError("This token doesn't exist"))
