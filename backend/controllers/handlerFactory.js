@@ -27,3 +27,18 @@ exports.createOne = Model => catchAsync(async (req, res, next) => {
         }
     })
 })
+
+exports.getOne = Model => catchAsync(async (req, res, next) => {
+    const createOne = await Model.findById(req.params.id);
+    if (!createOne) {
+        next(new AppError("No document found with this ID", 404))
+    }
+    res.status(200).json({
+        status: 'success',
+        data: {
+            data: {
+                data: createOne
+            }
+        }
+    })
+})

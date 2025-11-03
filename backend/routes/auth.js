@@ -6,23 +6,41 @@ router.post(
     '/signup',
     authController.signup
 )
+
 router.patch(
     '/confirm/:token',
-    authController.confirm)
+    authController.confirm
+)
+
 router.post(
     '/login',
-    authController.login);
+    authController.login
+);
+
+
 router.post(
-    '/changePassword',
-    authController.passwordRedefinition)
+    '/forgotPassword',
+    authController.forgotPassword
+)
 
 router.post(
     '/changePassword/:token',
-    authController.confirmRedefinition)
+    authController.confirmRedefinition
+)
+
 router.post(
     '/updatePassword',
     protect,
     authController.updatePassword
 )
 
+
+router.patch(
+    '/updateMe',
+    protect,
+    userController.uploadUserPhoto,
+    userController.resizeUserPhoto,
+    userController.updateMe
+
+)
 module.exports = router
