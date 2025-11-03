@@ -21,6 +21,10 @@ const userSchema = new Schema({
         required: [true, 'You need to put an email.'],
         validator: [validator.isEmail, 'Please provide a valid email']
     },
+    photo: {
+        type: String,
+        default: 'default.jpg'
+    },
     password: {
         type: String,
         required: [true, 'You need to put a password.'],
@@ -41,6 +45,8 @@ const userSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    confirmationToken: String,
+    confirmationTokenExpires: String,
     passwordChangeAt: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
@@ -85,9 +91,20 @@ userSchema.methods.changedPasswordAfter = async function (JWTimestamp) {
     }
     return false
 }
+userSchema.methods.createConfirmAccountToken = function () {
+    const tokenConfirm = crypto.randomBytes(32).toString('hex')
+    this.confirmationToken = crypto
+        .createHash('sha256')
+        .update(tokenConfirm)
+        .digest('hex')
+
+    return tokenConfirm
+
+}
+
 userSchema.methods.createPasswordResetToken = function () {
     const resetToken = crypto.randomBytes(32).toString('hex');
-    this.passwordResetToken = crypto
+    this.confirmationToken = crypto
         .createHash('sha256')
         .update(resetToken)
         .digest('hex')
@@ -96,4 +113,4 @@ userSchema.methods.createPasswordResetToken = function () {
 
     return resetToken
 }
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', userSchema)

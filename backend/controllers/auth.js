@@ -9,6 +9,8 @@ const createSendToken = require('../utils/tokenGenerator')
 
 const emailConfig = require('../utils/email')
 
+const crypto = require('crypto')
+
 const protect = require('../middleware/is-auth')
 
 require('dotenv').config('../config.env')
@@ -23,8 +25,8 @@ exports.signup = catchAsync(async (req, res, next) => {
         isActive: false,
         passwordConfirm,
         password,
-        tokenRedefinition
     })
+    await user.createConfirmAccountToken()
     emailConfig(`${req.protocol}://${req.get('host')}/confirm/${token}`,
         email,
         "It's important to verify your email.",
@@ -35,6 +37,11 @@ exports.signup = catchAsync(async (req, res, next) => {
 
 exports.confirm = catchAsync(async (req, res, next) => {
     const token = req.params.token;
+
+    const compareToken = crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex')
     const user = await User.findOne({ confirmationToken: token })
     if (!user) {
         next(
@@ -131,17 +138,17 @@ exports.confirmRedefinition = catchAsync(async (req, res, next) => {
 })
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
-  const userFind = await User.findById(req.user.id).select('+password');
-  
-  const comparePassword = await User.correctPassword(req.body.passwordCurrent, userFind.password);
+    const userFind = await User.findById(req.user.id).select('+password');
 
-  if(!comparePassword) {
-     return next(new AppError('The current password is wrong', 401));
-  }
-  userFind.password = req.body.password;
-  userFind.passwordConfirm = req.body.passwordConfirm;
+    const comparePassword = await User.correctPassword(req.body.passwordCurrent, userFind.password);
 
-  await userFind.save();
+    if (!comparePassword) {
+        return next(new AppError('The current password is wrong', 401));
+    }
+    userFind.password = req.body.password;
+    userFind.passwordConfirm = req.body.passwordConfirm;
 
-  createSendToken(userFind, 200, res)
+    await userFind.save();
+
+    createSendToken(userFind, 200, res)
 })
