@@ -1,20 +1,15 @@
-const bcrypt = require('bcrypt');
-
-const jwt = require('jsonwebtoken');
-
-const crypto = require('crypto');
 
 const User = require('../model/userDashboard');
 
 const catchAsync = require('../utils/catchAsync')
-
-const emailSendGrid = require('@sendgrid/mail');
 
 const AppError = require('../utils/appError')
 
 const createSendToken = require('../utils/tokenGenerator')
 
 const emailConfig = require('../utils/email')
+
+const protect = require('../middleware/is-auth')
 
 require('dotenv').config('../config.env')
 
@@ -70,69 +65,83 @@ exports.login = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email: email }).select('+password');
-    
+
     if (!user || !user.correctPassword(password, user.password)) {
         return AppError('There is a problem in the login', 422)
     }
     createSendToken.createSendToken(user, 200, res)
 })
-exports.passwordRedefinition = catchAsync(async (req, res, next) => {
-    const email = req.body.email;
 
-    const user = await User.findOne({ email})
+exports.forgotPassword = catchAsync(async (req, res, next) => {
+    const { email } = req.body
+    const user = await User.findOne({ email });
 
     if (!user) {
-        return next(AppError('There is no user with this email adress', 404))
+        return next(new AppError('There is no user with this email address', 404))
     }
-    const token = crypto.randomBytes(32).toString('hex');
+    const resetToken = await user.createPasswordResetToken()
 
-    const confirmLink = `http://localhost:3000/auth/changePassword/${token}`
+    try {
+        const resetURL = `${req.protocol}://${req.get(
+            'host'
+        )}/api/v1/users/resetPassword/${resetToken}`;
 
-    const emailContent = {
-        to: email,
-        from: 'vitorvpio60@gmail.com',
-        subject: 'This is your link to change the password!!!',
-        text: confirmLink,
-        html: confirmLink
+        await emailConfig(
+            resetURL,
+            user.email,
+            "Email redefinition",
+            "This is your token to reset the password",
+
+        )
+    } catch (error) {
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        await user.save({ validateBeforeSave: false })
+
+        return next(
+            new AppError('Ocurred an error to send the email'),
+            500
+        )
     }
-    user.tokenRedefinition = token;
-
-    await user.save();
-
-    await emailSendGrid
-        .send(emailContent)
-        .then(() => {
-            console.log(`Email sent for ${email}`)
-        })
-        .catch((error) => {
-            console.log(error)
-        })
-
-    res.status(200)
-        .json({
-            mensage: "The link to change the password was sent!!!",
-            status: 200
-        })
 })
+
 exports.confirmRedefinition = catchAsync(async (req, res, next) => {
     const confirmToken = req.params.token;
 
-    const { password } = req.body;
-    console.log(confirmToken)
+    const { password, passwordConfirm } = req.body;
     const user = await User.findOne({ tokenRedefinition: confirmToken })
 
     if (!user) {
-        const error = new Error("This Token doesn't exist!!!")
-        error.statusCode = 401
-        throw error
+        return next(new AppError("This token doesn't exist"))
     }
-    const hashedPw = await bcrypt.hash(password, 12);
 
-    user.password = hashedPw;
-    user.tokenRedefinition = undefined
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    user.passwordConfirm = passwordConfirm
+
     await user.save();
 
+    const token = createSendToken.signToken(user._id)
+
     res.status(200).json({
-        mensage: 'The password was changed!!!'
+        mensage: 'The password was changed!!!',
+        token
     })
+})
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  const userFind = await User.findById(req.user.id).select('+password');
+  
+  const comparePassword = await User.correctPassword(req.body.passwordCurrent, userFind.password);
+
+  if(!comparePassword) {
+     return next(new AppError('The current password is wrong', 401));
+  }
+  userFind.password = req.body.password;
+  userFind.passwordConfirm = req.body.passwordConfirm;
+
+  await userFind.save();
+
+  createSendToken(userFind, 200, res)
 })

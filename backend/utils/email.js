@@ -4,7 +4,7 @@ require('dotenv').config('../config.env')
 
 emailSendGrid.setApiKey(process.env.SENDGRID_API_KEY)
 
-const emailConfig = async (html, email, subject, text) => {
+const emailConfig = async (link, email, subject, text) => {
     const emailContent = {
         to: email,
         from: 'vitorvpio60@gmail.com',

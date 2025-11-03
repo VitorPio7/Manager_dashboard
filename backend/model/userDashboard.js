@@ -41,7 +41,6 @@ const userSchema = new Schema({
         type: Boolean,
         default: false,
     },
-    tokenRedefinition: String,
     passwordChangeAt: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
