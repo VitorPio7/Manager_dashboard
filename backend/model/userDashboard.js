@@ -46,7 +46,7 @@ const userSchema = new Schema({
         default: false,
     },
     confirmationToken: String,
-    confirmationTokenExpires: String,
+    confirmationTokenExpires: Date,
     passwordChangeAt: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
@@ -98,8 +98,18 @@ userSchema.methods.createConfirmAccountToken = function () {
         .update(tokenConfirm)
         .digest('hex')
 
+    this.confirmationTokenExpires = Date.now() + 14440 * 60 * 1000;
     return tokenConfirm
 
+}
+
+userSchema.methods.verifyIfTheDateTokenPassed = function () {
+
+    if (confirmationTokenExpires < Date.now() && !undefined) {
+       this.createPasswordResetToken();
+       return true
+    }
+    return;
 }
 
 userSchema.methods.createPasswordResetToken = function () {

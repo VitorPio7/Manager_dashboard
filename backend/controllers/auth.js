@@ -42,23 +42,22 @@ exports.confirm = catchAsync(async (req, res, next) => {
         .createHash('sha256')
         .update(token)
         .digest('hex')
-    const user = await User.findOne({ confirmationToken: token })
+    const user = await User.findOne({
+        confirmationToken: compareToken,
+        confirmationTokenExpires: { $gt: Date.now }
+    })
     if (!user) {
         next(
             AppError(
-                "The user user with this token doesn't exist",
-                401))
-    }
-    if (user.isActive) {
-        next(
-            AppError(
-                "The user user with this token doesn't exist",
+                "The user user with this token doesn't exist or is invalid",
                 401))
     }
 
     user.isActive = true;
 
     user.confirmationToken = undefined;
+
+    user.confirmationTokenExpires = undefined;
 
     await user.save();
 
@@ -72,10 +71,21 @@ exports.login = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email: email }).select('+password');
-
+  
     if (!user || !user.correctPassword(password, user.password)) {
         return AppError('There is a problem in the login', 422)
     }
+
+    const resetToken = await user.verifyIfTheDateTokenPassed()
+   
+    if(resetToken) {
+        emailConfig(`${req.protocol}://${req.get('host')}/confirm/${token}`,
+            email,
+            "It's important to verify your email.",
+            "Confirm your account!!!"
+        )
+    }
+
     createSendToken.createSendToken(user, 200, res)
 })
 
