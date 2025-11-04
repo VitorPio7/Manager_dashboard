@@ -8,10 +8,6 @@ const sharp = require('sharp');
 
 const multer = require('multer');
 
-const factory = require('./handlerFactory')
-
-const userController = require('../controllers/user')
-
 const multerStorage = multer.memoryStorage();
 
 const multerFilter = (req, file, cb) => {

@@ -18,7 +18,6 @@ const globalErrorHandler = require('./controllers/errorController')
 
 const app = express();
 
-const multer = require('multer');
 const AppError = require('./utils/appError');
 
 require('dotenv').config({ path: './config.env' })
@@ -33,32 +32,7 @@ const limiter = rateLimit({
     message: 'Too many requests from this IP, please try again in an hour!'
 })
 
-const fileStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'images')
-    },
-    filename: (req, file, cb) => {
-        cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname)
-    }
-})
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/png' ||
-        file.mimetype === 'image/jpg' ||
-        file.mimetype === 'image/jpeg'
-    ) {
-        cb(null, true);
-    } else {
-        cb(null, false)
-    }
-}
 app.use('/api', limiter)
-
-app.use(multer(
-    {
-        storage: fileStorage,
-        fileFilter
-    }
-).single('imageUrl'))
 
 app.use('/images', express.static(path.join(__dirname, 'images')))
 
