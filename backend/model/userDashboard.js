@@ -8,7 +8,7 @@ const bcrypt = require('bcrypt')
 
 const crypto = require('crypto');
 
-
+//My user schema
 const userSchema = new Schema({
     name: {
         type: String,
