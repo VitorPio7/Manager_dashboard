@@ -1,26 +1,25 @@
-const emailSendGrid = require('@sendgrid/mail');
+const nodemailer = require("nodemailer");
 
-require('dotenv').config('../config.env')
-
-emailSendGrid.setApiKey(process.env.SENDGRID_API_KEY)
+require('dotenv').config('../.config.env')
 
 const emailConfig = async (link, email, subject, text) => {
-    const emailContent = {
+    const transporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: process.env.PORT_EMAIL_DEV,
+        secure: false,
+        auth: {
+            user: process.env.EMAIL_HOST_DEV,
+            pass: process.env.EMAIL_PASSWORD_DEV
+        }
+    })
+    const info = await transporter.sendMail({
+        from: `"Vitor Pio Vieira" <${process.env.EMAIL_HOST_DEV}>`,
         to: email,
-        from: 'vitorvpio60@gmail.com',
         subject: subject,
-        text: link,
-        html: text
-    }
-    await emailSendGrid
-        .send(emailContent)
-        .then(() => {
-            console.log(`Email sent for ${email}`)
-        })
-        .catch((error) => {
-            console.log(error)
-        })
-
-}
+        text: text,
+        html: link
+    })
+    return info
+} 
 
 module.exports = emailConfig;

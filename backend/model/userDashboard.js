@@ -12,11 +12,14 @@ const crypto = require('crypto');
 const userSchema = new Schema({
     name: {
         type: String,
+        trim: true,
         required: [true, 'You need to put a name.']
+
     },
     email: {
         type: String,
         unique: true,
+        trim: true,
         lowercase: true,
         required: [true, 'You need to put an email.'],
         validator: [validator.isEmail, 'Please provide a valid email']
@@ -28,35 +31,47 @@ const userSchema = new Schema({
     password: {
         type: String,
         required: [true, 'You need to put a password.'],
+        trim: true,
         minlenght: 8,
-        select: false
-    },
-    passwordConfirm: {
-        type: String,
-        required: [true, 'You need to confirm your password'],
+        select: false,
         validate: {
-            validator: function (el) {
-                return el === this.password;
+            validator: function (value) {
+                return validator.isStrongPassword(value, {
+                    minLength: 8,
+                    minUppercase: 1,
+                    minNumbers: 1,
+                    minSymbols: 1
+                })
             },
-            message: 'Passwords are not the same!'
-        }
-    },
-    isActive: {
-        type: Boolean,
-        default: false,
-    },
-    confirmationToken: String,
-    confirmationTokenExpires: Date,
-    passwordChangeAt: Date,
-    passwordResetToken: String,
-    passwordResetExpires: Date,
-    products: [
-        {
-            type: Schema.Types.ObjectId,
-            ref: 'products'
-        }
-    ]
-})
+            message: 'The password is not strong enought. (Must be 8+ caracteres, 1 lowercase an 1 uppercase an 1 symbol).'
+        },
+        passwordConfirm: {
+            type: String,
+            trim: true,
+            required: [true, 'You need to confirm your password'],
+            validate: {
+                validator: function (el) {
+                    return el === this.password;
+                },
+                message: 'Passwords are not the same!'
+            }
+        },
+        isActive: {
+            type: Boolean,
+            default: false,
+        },
+        confirmationToken: String,
+        confirmationTokenExpires: Date,
+        passwordChangeAt: Date,
+        passwordResetToken: String,
+        passwordResetExpires: Date,
+        products: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'products'
+            }
+        ]
+    }})
 
 
 userSchema.pre('save', async function (next) {
@@ -106,8 +121,8 @@ userSchema.methods.createConfirmAccountToken = function () {
 userSchema.methods.verifyIfTheDateTokenPassed = function () {
 
     if (confirmationTokenExpires < Date.now() && !undefined) {
-       this.createPasswordResetToken();
-       return true
+        this.createPasswordResetToken();
+        return true
     }
     return;
 }

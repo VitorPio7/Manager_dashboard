@@ -1,7 +1,8 @@
 const express = require('express');
-const authController = require('../controllers/auth')
+const authController = require('../controllers/auth');
+const userController = require('../controllers/user')
 const router = express.Router();
-const protect = require('../middleware/is-auth')
+const isAuth = require('../middleware/is-auth')
 router.post(
     '/signup',
     authController.signup
@@ -30,17 +31,22 @@ router.post(
 
 router.post(
     '/updatePassword',
-    protect,
+    isAuth.protect,
     authController.updatePassword
 )
 
 
 router.patch(
     '/updateMe',
-    protect,
+    isAuth.protect,
     userController.uploadUserPhoto,
     userController.resizeUserPhoto,
     userController.updateMe
 
+)
+router.delete(
+    '/deleteAccount',
+    isAuth.protect,
+    userController.deleteMe
 )
 module.exports = router

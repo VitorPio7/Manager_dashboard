@@ -1,7 +1,5 @@
 const express = require('express');
 
-const { body, param } = require('express-validator')
-
 const productsController = require('../controllers/products')
 
 const isAuth = require('../middleware/is-auth');
@@ -10,81 +8,31 @@ const router = express.Router();
 
 
 router.get("/",
-    isAuth,
+    isAuth.protect,
     productsController.productsQueries,
-    productsController.getAllProducts);
-
+    productsController.getAllProducts
+);
 
 //Limpar essas rotas
-router.post("/createProduct", isAuth, [
-    body("title")
-        .notEmpty()
-        .isString()
-        .escape()
-        .withMessage('Please enter a valid name!!!'),
-    body("price")
-        .notEmpty()
-        .isNumeric()
-        .escape()
-        .withMessage("Please enter a valid price!!!"),
-    body("quantity")
-        .notEmpty()
-        .isInt()
-        .escape()
-        .withMessage("Please enter a valid quantity!!!"),
-    body("category")
-        .notEmpty()
-        .isString()
-        .escape()
-        .withMessage("Please enter a valid category"),
-    body("imageUrl").custom((value, { req }) => {
-        if (!value && !req.file) {
-            throw new Error("Please provide an image!");
-        }
-        return true;
-    })
-], productsController.createProduct);
+router.post("/createProduct",
+    isAuth.protect,
+    productsController.createProduct
+);
 
+router.route("/:id")
+    .get(
+        isAuth.protect,
+        productsController.getProduct
+    )
+    .patch(
+        isAuth.protect,
+        productsController.uploadTourImages,
+        productsController.resizeProductImages,
+        productsController.updateProduct
+    )
+    .delete(
+        isAuth.protect,
+        productsController.deleteProduct
+    )
 
-router.get("/:product", isAuth, [
-    param("product")
-        .notEmpty()
-        .withMessage("Please, send the id of the product!!!")
-], productsController.getProduct)
-
-
-router.patch("/:product", isAuth, [
-    param("product")
-        .notEmpty()
-        .withMessage("Please, send the id of the product!!!"),
-    body("title")
-        .notEmpty()
-        .isString()
-        .escape()
-        .withMessage('Please enter a valid name!!!'),
-    body("price")
-        .notEmpty()
-        .isNumeric()
-        .escape()
-        .withMessage("Please enter a valid price!!!"),
-    body("category")
-        .notEmpty()
-        .isString()
-        .escape()
-        .withMessage("Please enter a valid category"),
-    body("quantity")
-        .notEmpty()
-        .isInt()
-        .escape()
-        .withMessage("Please enter a valid quantity!!!"),
-    body("imageUrl").custom((value, { req }) => {
-        if (!value && !req.file) {
-            throw new Error("Please provide an image!");
-        }
-        return true;
-    })
-
-], productsController.updateProduct);
 module.exports = router;
-
-router.delete("/:product", isAuth, productsController.deleteProduct)

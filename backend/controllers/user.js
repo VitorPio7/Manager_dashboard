@@ -1,8 +1,8 @@
 const AppError = require('../utils/appError');
 
-const User = require('./../model/userModel');
+const User = require('./../model/userDashboard');
 
-const catchAsync = require('./handlerFactory')
+const catchAsync = require('../utils/catchAsync')
 
 const sharp = require('sharp');
 
@@ -66,5 +66,15 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         data: {
             user
         }
+    })
+})
+exports.deleteMe = catchAsync(async (req, res, next) => {
+    let user = await User.findByIdAndUpdate(req.user.id, { active: false });
+    if(!user) {
+        next(AppError("This user doesn't exist."))
+    }
+    res.status(204).json({
+        status: 'success',
+        data: null
     })
 })

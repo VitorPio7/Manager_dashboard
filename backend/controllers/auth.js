@@ -5,7 +5,7 @@ const catchAsync = require('../utils/catchAsync')
 
 const AppError = require('../utils/appError')
 
-const createSendToken = require('../utils/tokenGenerator')
+const { createSendToken, signToken } = require('../utils/tokenGenerator')
 
 const emailConfig = require('../utils/email')
 
@@ -17,20 +17,20 @@ require('dotenv').config({ path: '../config.env' })
 
 exports.signup = catchAsync(async (req, res, next) => {
     const { email, name, passwordConfirm, password } = req.body
-    const user = new User.create({
+    const user = await User.create({
         email,
         name,
         isActive: false,
         passwordConfirm,
         password,
     })
-    await user.createConfirmAccountToken()
-    emailConfig(`${req.protocol}://${req.get('host')}/confirm/${token}`,
+    const token = await user.createConfirmAccountToken()
+    await emailConfig(`${req.protocol}://${req.get('host')}/confirm/${token}`,
         email,
         "It's important to verify your email.",
         "Confirm your account!!!"
     )
-    createSendToken.createSendToken(user, 201, res)
+    createSendToken(user, 201, res)
 })
 
 exports.confirm = catchAsync(async (req, res, next) => {
@@ -46,7 +46,7 @@ exports.confirm = catchAsync(async (req, res, next) => {
     })
     if (!user) {
         next(
-            AppError(
+            new AppError(
                 "The user user with this token doesn't exist or is invalid",
                 401))
     }
@@ -84,7 +84,7 @@ exports.login = catchAsync(async (req, res, next) => {
         )
     }
 
-    createSendToken.createSendToken(user, 200, res)
+    createSendToken(user, 200, res)
 })
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
@@ -112,7 +112,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
             status: 'success',
             message: 'Token sent to email!'
         });
-        
+
     } catch (error) {
         user.passwordResetToken = undefined;
         user.passwordResetExpires = undefined;
@@ -150,7 +150,7 @@ exports.confirmRedefinition = catchAsync(async (req, res, next) => {
 
     await user.save();
 
-    const token = createSendToken.signToken(user._id)
+    const token = signToken(user._id)
 
     res.status(200).json({
         mensage: 'The password was changed!!!',

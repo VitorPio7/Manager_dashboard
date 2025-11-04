@@ -7,7 +7,7 @@ process.on('uncaughtException', err => {
 
 const app = require('./app')
 
-require('dotenv').config({ path: './.env' })
+require('dotenv').config({ path: './.config.env' })
 
 mongoose
     .connect(process.env.MONGODB_URI, {

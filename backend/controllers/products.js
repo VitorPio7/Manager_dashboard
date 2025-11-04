@@ -2,12 +2,6 @@ const catchAsync = require('../utils/catchAsync')
 
 const Products = require('../model/products');
 
-const User = require('../model/userDashboard');
-
-const path = require("path");
-
-const fs = require("fs");
-
 const factory = require('../controllers/handlerFactory')
 
 const multer = require('multer');
@@ -64,7 +58,7 @@ exports.productsQueries = function (req, res, next) {
    next()
 }
 
-exports.getAllProducts = handlerFactory.getAll(Products);
+exports.getAllProducts = factory.getAll(Products);
 
 exports.createProduct = factory.createOne(Products)
 
@@ -72,29 +66,4 @@ exports.getProduct = factory.getOne(Products)
 
 exports.updateProduct = factory.updateProducts(Products)
 
-exports.deleteProduct = catchAsync(async (req, res, next) => {
-
-   const productId = req.params.product;
-   
-   if (findProductId.creator._id.toString() !== req.userId) {
-      const error = new Error("You are not authorized to delete!!!")
-      error.message = 403
-      throw error;
-   }
-
-   await Products.findByIdAndDelete(productId);
-
-   filePath = path.join(__dirname, '..', findProductId.imageUrl);
-
-   fs.unlink(filePath, err => console.log(err));
-
-   const user = await User.findById(req.userId);
-
-   user.products.pull(productId);
-
-   await user.save();
-
-   res.status(200).json({
-      message: 'Post deleted!!!'
-   })
-})
+exports.deleteProduct = factory.deleteOne(Products)
