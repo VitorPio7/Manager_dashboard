@@ -14,21 +14,22 @@ const emailConfig = async (link, email, subject, text, next) => {
                 }
             })
 
-            const htlmlBody = `
-     <h1>${subject}</h1>
-     <p>${text}</p>
-     ${link ? `<p>Please, click on the link bellow to continue:</p>
-     <a href:"${link}" target="_blank" >Confirm the action</a>
-     <br>
-     <p>If you cant click, copy and past this URL in the browser:</p>
-     <p>${link}</p>` : null}```
-
+            const htmlBody = ` 
+               <h1>${subject}</h1>
+               <p>${text}</p>
+               ${link ? `<p>Please, click on the link bellow to continue:</p>
+               <a href:"${link}" target="_blank" >Confirm the action</a>
+               <br>
+               <p>If you cant click, copy and past this URL in the browser:</p>
+               <p>${link}</p>
+               `: ``}
+            `
             const info = await transporter.sendMail({
                 from: `"Vitor Pio Vieira" < ${process.env.EMAIL_HOST_DEV}> `,
                 to: email,
                 subject: subject,
                 text: text,
-                html: htlmlBody
+                html: htmlBody
             })
             console.log('--- [email.js] Email enviado! ID:', info.messageId);
 
@@ -36,7 +37,7 @@ const emailConfig = async (link, email, subject, text, next) => {
 
             return info
         } catch (error) {
-            next(new AppError(error.message, 500))
+            return next(new AppError(error, 500))
         }
     } else {
         return 1

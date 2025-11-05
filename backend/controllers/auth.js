@@ -136,6 +136,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
             user.email,
             "Email redefinition",
             "This is your token to reset the password",
+            next
 
         )
         res.status(200).json({
@@ -148,10 +149,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
         user.passwordResetExpires = undefined;
         await user.save({ validateBeforeSave: false })
 
-        return next(
-            new AppError('Ocurred an error to send the email'),
-            500
-        )
+        return next(new AppError(error, 500))
     }
 })
 
@@ -170,7 +168,7 @@ exports.confirmRedefinition = catchAsync(async (req, res, next) => {
     })
 
     if (!user) {
-        return next(new AppError("This token doesn't exist"))
+        return next(new AppError("This token doesn't exist", 400))
     }
 
     user.password = password;
@@ -180,7 +178,7 @@ exports.confirmRedefinition = catchAsync(async (req, res, next) => {
 
     await user.save();
 
-   
+
     await emailConfig(
         null,
         user.email,
