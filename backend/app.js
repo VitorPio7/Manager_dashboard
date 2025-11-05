@@ -8,8 +8,6 @@ const path = require('path')
 
 const morgan = require('morgan')
 
-const mongoSanitize = require('express-mongo-sanitize')
-
 const rateLimit = require('express-rate-limit');
 
 const cors = require('cors');
@@ -24,7 +22,9 @@ const AppError = require('./utils/appError');
 
 const cookieParser = require('cookie-parser')
 
-require('dotenv').config({ path: './.config.env' })
+const dotenv = require('dotenv');
+
+dotenv.config({ path: './.config.env' });
 
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'))
@@ -42,9 +42,9 @@ app.use('/images', express.static(path.join(__dirname, 'images')))
 
 app.use(cors());
 
-app.use(helmet())
-
 app.use(express.json());
+
+app.use(helmet())
 
 app.use(express.json({ limit: '10kb' }))
 
@@ -58,7 +58,6 @@ app.use('/api/auth', authRotes)
 
 app.use('/api/products', products);
 
-app.use(mongoSanitize())
 
 app.all(/(.*)/, (req, res, next) => {
     next(
