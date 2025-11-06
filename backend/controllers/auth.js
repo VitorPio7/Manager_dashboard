@@ -72,8 +72,10 @@ exports.login = catchAsync(async (req, res, next) => {
 
     const user = await User.findOne({ email: email }).select('+password');
 
-    if (!user || !(await user.correctPassword(password, user.password))) {
-        return AppError('There is a problem in the login', 401)
+    const comparePassword = await user.correctPassword(password, user.password);
+
+    if (!user || !comparePassword) {
+        return next(new AppError('There is a problem in the login', 401))
     }
     if (!user.isActive) {
         return next(
@@ -155,19 +157,25 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
 exports.confirmRedefinition = catchAsync(async (req, res, next) => {
     const confirmToken = req.params.token;
-
+    console.time("TotalTime")
     const hashedToken = crypto
         .createHash('sha256')
         .update(confirmToken)
         .digest('hex');
-
+    console.timeLog("TotalTime", "Token hashed");
     const { password, passwordConfirm } = req.body;
+
+    console.time("FindUser");
+
     const user = await User.findOne({
         passwordResetToken: hashedToken,
         passwordResetExpires: { $gt: Date.now() }
     })
 
+    console.timeEnd("FindUser");
+
     if (!user) {
+        console.timeEnd("TotalTime")
         return next(new AppError("This token doesn't exist", 400))
     }
 
@@ -175,21 +183,20 @@ exports.confirmRedefinition = catchAsync(async (req, res, next) => {
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
     user.passwordConfirm = passwordConfirm
+    console.time("SaveUser")
 
     await user.save();
+    console.timeEnd("SaveUser")
 
+    console.time("SendEmail")
+    emailConfig(null, user.email, "Email redefinition", "you've just redefined your Password", next)
+        .catch(err => console.error("Error sending email:", err));
 
-    await emailConfig(
-        null,
-        user.email,
-        "Email redefinition",
-        "you've just redefined your Password",
-        next
-    )
+    console.timeEnd("SendEmail")
     res.status(200).json({
         mensage: 'The password was changed!!!',
-        token
     })
+    console.timeEnd("TotalTime");
 })
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
@@ -203,7 +210,7 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
     userFind.password = req.body.password;
     userFind.passwordConfirm = req.body.passwordConfirm;
 
-    await userFind.save();
+    await userFind.save({ validateBeforeSave: false });
 
     createSendToken(userFind, 200, null, res)
 })

@@ -4,6 +4,8 @@ const authRotes = require('./routes/auth');
 
 const products = require('./routes/products');
 
+const timeout = require('connect-timeout');
+
 const path = require('path')
 
 const morgan = require('morgan')
@@ -35,6 +37,14 @@ const limiter = rateLimit({
     limit: 110,
     message: 'Too many requests from this IP, please try again in an hour!'
 })
+
+// app.use(timeout('12s'));
+
+// app.use(haltOnTimedout);
+
+function haltOnTimedout(req, res, next) {
+    if (!req.timeout) next()
+}
 
 app.use('api', limiter)
 

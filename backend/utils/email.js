@@ -31,8 +31,7 @@ const emailConfig = async (link, email, subject, text, next) => {
                 text: text,
                 html: htmlBody
             })
-            console.log('--- [email.js] Email enviado! ID:', info.messageId);
-
+            
             console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
 
             return info

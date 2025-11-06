@@ -74,11 +74,10 @@ const userSchema = new Schema({
     ]
 })
 
-
 userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next();
 
-    this.password = await bcrypt.hash(this.password, 12);
+    this.password = await bcrypt.hash(this.password, 10);
 
     this.passwordConfirm = undefined;
 
@@ -90,6 +89,7 @@ userSchema.pre('save', function (next) {
     if (!this.isModified('password') || this.isNew) return next();
 
     this.passwordChangeAt = Date.now()
+    next()
 })
 
 userSchema.methods.correctPassword = async function (inputPassword, userPassword) {
@@ -97,12 +97,14 @@ userSchema.methods.correctPassword = async function (inputPassword, userPassword
 }
 // Verify when the user is logged, if there is a change in the password
 userSchema.methods.changedPasswordAfter = async function (JWTimestamp) {
+    console.log(JWTimestamp)
     if (this.passwordChangeAt) {
         const changedTimestamp = parseInt(
             //Convert the time in seconds because the JWTTImestamp is in seconds too
             this.passwordChangeAt.getTime() / 1000,
             10
         )
+        console.log(changedTimestamp)
         return JWTimestamp < changedTimestamp
     }
     return false

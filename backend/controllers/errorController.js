@@ -24,6 +24,9 @@ const handleJWTError = err => AppError(
 const handleJWTExpiredError = err => AppError(
     'Your token has expired! Please log in again!', 401
 )
+const handleTimeOutExpires = err => AppError(
+    "It's taking many time to get your data, please, try another time!", 503
+)
 module.exports = (err, req, res, next) => {
     err.statusCode = err.statusCode || 500;
     err.status = err.status || 'error';
@@ -37,18 +40,19 @@ module.exports = (err, req, res, next) => {
         })
     } else if (process.env.NODE_ENV === 'production') {
         let error = { ...err };
+        if (error.name === "Response timeout") error = handleTimeOutExpires(error)
         if (error.name === 'CastError') error = handleCastErrorDB(error);
         if (error.code === 11000) error = handleDuplicateFieldsDB(error);
-        if (error.name === 'ValidationError') error = handleValidationErrorDB(error)
         if (error.name === 'JsonWebTokeError') error = handleJWTError()
         if (error.name === 'tokenExpireError') error = handleJWTExpiredError()
+        if (error.name === 'ValidatorError') error = handleValidationErrorDB()
         if (error.code) {
             if (err.isOperational) {
                 res.status(err.statusCode).json({
                     status: error.status,
                     message: error.message
                 })
-            }else {
+            } else {
                 console.error('ERROR', err)
                 res.status(500).json({
                     status: 'error',
