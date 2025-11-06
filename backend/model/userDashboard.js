@@ -8,7 +8,7 @@ const bcrypt = require('bcrypt')
 
 const crypto = require('crypto');
 
-
+//My user schema
 const userSchema = new Schema({
     name: {
         type: String,
@@ -45,33 +45,34 @@ const userSchema = new Schema({
             },
             message: 'The password is not strong enought. (Must be 8+ caracteres, 1 lowercase an 1 uppercase an 1 symbol).'
         },
-        passwordConfirm: {
-            type: String,
-            trim: true,
-            required: [true, 'You need to confirm your password'],
-            validate: {
-                validator: function (el) {
-                    return el === this.password;
-                },
-                message: 'Passwords are not the same!'
-            }
-        },
-        isActive: {
-            type: Boolean,
-            default: false,
-        },
-        confirmationToken: String,
-        confirmationTokenExpires: Date,
-        passwordChangeAt: Date,
-        passwordResetToken: String,
-        passwordResetExpires: Date,
-        products: [
-            {
-                type: Schema.Types.ObjectId,
-                ref: 'products'
-            }
-        ]
-    }})
+    },
+    passwordConfirm: {
+        type: String,
+        trim: true,
+        required: [true, 'You need to confirm your password'],
+        validate: {
+            validator: function (el) {
+                return el === this.password;
+            },
+            message: 'Passwords are not the same!'
+        }
+    },
+    isActive: {
+        type: Boolean,
+        default: false,
+    },
+    confirmationToken: String,
+    confirmationTokenExpires: Date,
+    passwordChangeAt: Date,
+    passwordResetToken: String,
+    passwordResetExpires: Date,
+    products: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'products'
+        }
+    ]
+})
 
 
 userSchema.pre('save', async function (next) {
@@ -120,16 +121,16 @@ userSchema.methods.createConfirmAccountToken = function () {
 
 userSchema.methods.verifyIfTheDateTokenPassed = function () {
 
-    if (confirmationTokenExpires < Date.now() && !undefined) {
-        this.createPasswordResetToken();
-        return true
+    if (this.confirmationTokenExpires  && this.confirmationTokenExpires < Date.now()) {
+        const novoTokenConfirmacao = this.createPasswordResetToken();
+        return novoTokenConfirmacao
     }
-    return;
+    return false;
 }
 
 userSchema.methods.createPasswordResetToken = function () {
     const resetToken = crypto.randomBytes(32).toString('hex');
-    this.confirmationToken = crypto
+    this.passwordResetToken = crypto
         .createHash('sha256')
         .update(resetToken)
         .digest('hex')

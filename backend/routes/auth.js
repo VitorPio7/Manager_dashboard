@@ -1,8 +1,13 @@
 const express = require('express');
+
 const authController = require('../controllers/auth');
+
 const userController = require('../controllers/user')
+
 const router = express.Router();
+
 const isAuth = require('../middleware/is-auth')
+
 router.post(
     '/signup',
     authController.signup
@@ -25,7 +30,7 @@ router.post(
 )
 
 router.post(
-    '/changePassword/:token',
+    '/confirmRedefinition/:token',
     authController.confirmRedefinition
 )
 
@@ -48,5 +53,8 @@ router.delete(
     '/deleteAccount',
     isAuth.protect,
     userController.deleteMe
+)
+router.post('/resend-confimation',
+    authController.resendConfirmation
 )
 module.exports = router

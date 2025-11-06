@@ -1,4 +1,3 @@
-require('dotenv').config({ path: '../.config.env' })
 const jwt = require('jsonwebtoken');
 
 let signToken = id => {
@@ -8,11 +7,11 @@ let signToken = id => {
 }
 
 let createSendToken = (user, statusCode, req, res) => {
-    const token = signToken(signToken(user._id));
+    const token = signToken(user._id);
     user.password = undefined;
 
     res.status(statusCode).json({
-        status: 'success, we sent to you an email!!!',
+        status: 'login success',
         token,
         data: {
             user
