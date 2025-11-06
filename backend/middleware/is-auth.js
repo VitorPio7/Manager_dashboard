@@ -1,7 +1,11 @@
 const { verify } = require("jsonwebtoken");
+
 const AppError = require("../utils/appError");
+
 const catchAsync = require("../utils/catchAsync");
+
 const User = require('../model/userDashboard')
+
 exports.protect = catchAsync(async (req, res, next) => {
     let token;
     console.log(req.headers.authorization)
@@ -24,15 +28,7 @@ exports.protect = catchAsync(async (req, res, next) => {
                 return decoded
             }
         })
-    // new Promise((resolve, reject) => {
-    //     verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    //         console.log(err)
-    //         if (err) reject(new AppError(err.message, 404
 
-    //         ));
-    //         else resolve(decoded)
-    //     })
-    // })
     const decoded =  verifyToken(token)
 
     const freshUser = await User.findById(decoded.id);
