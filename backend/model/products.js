@@ -6,6 +6,7 @@ const products = new Schema(
         title: {
             type: String,
             required: [true, 'Product name is required.'],
+            unique: true
         },
         price: {
             type: Schema.Types.Decimal128,
@@ -18,6 +19,9 @@ const products = new Schema(
                 require: [true, "You need to pass at least an image."]
             }
         ],
+        changedAt: {
+            type: Date
+        },
         quantity: {
             type: Number,
             required: true,
@@ -34,11 +38,16 @@ const products = new Schema(
         creator: {
             type: Schema.Types.ObjectId,
             ref: 'User',
-            required: [true, 'You must pass the creator of this product!!!']
         }
 
     },
     { timestamps: true }
 )
 
+products.pre('save', async function (next) {
+     this.
+})
+products.virtual('totalPriceInStock').get(function () {
+    return this.quantity * this.price
+})
 module.exports = mongoose.model('products', products);

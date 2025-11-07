@@ -34,22 +34,22 @@ const upload = multer({
 })
 
 exports.uploadProductsImages = upload.fields([
-   { name: 'imageUrl', maxCount: 4 }
+   { name: 'photo', maxCount: 4 }
 ])
 
 exports.resizeProductImages = catchAsync(async (req, res, next) => {
-   if (!req.files.images) return next();
-   req.body.images = [];
+   if (!req.files.photo || !req.files) return next();
+   req.body.imageUrl = [];
    await Promise.all(
-      req.files.images.map(async (file, i) => {
-         const filename = `product-${req.params.id}-${Date.now()}-${i + 1}.jpeg`
+      req.files.photo.map(async (file, i) => {
+         const filename = `product-${req.user.id}-${Date.now()}-${i + 1}.jpeg`
 
          await sharp(file.buffer)
             .resize(2000, 1333)
             .toFormat('jpeg')
             .jpeg({ quality: 80 })
             .toFile(`public/img/products/${filename}`)
-         req.body.images.push(filename)
+         req.body.imageUrl.push(filename)
       })
    )
    next()
@@ -62,25 +62,30 @@ exports.productsQueries = function (req, res, next) {
 
 exports.getAllProducts = factory.getAll(Products);
 
+exports.getProduct = factory.getOne(Products)
+
 exports.createProduct = catchAsync(async (req, res, next) => {
    const { title, price, quantity, category } = req.body;
-   const user = req._id;
 
-   const product = new post({
+   const user = req.user._id;
+
+   console.log(req.files.photo)
+
+   const product = new Products({
       title,
       price,
       quantity,
       category,
       creator: user,
-      imageUrl: req.file.filename
+      imageUrl: req.body.imageUrl || []
    })
-   await product.save()
+   await product.save({ validateBeforeSave: false })
 
+   console.log(user)
    const userFind = await User.findById(user);
-
+   console.log(userFind)
    userFind.products.push(product)
-
-   await userFind.save()
+   await userFind.save({ validateBeforeSave: false })
 
    res.status(201).json({
       message: 'Product created successfully',
@@ -89,8 +94,6 @@ exports.createProduct = catchAsync(async (req, res, next) => {
       }
    })
 })
-
-exports.getProduct = factory.getOne(Products)
 
 exports.updateProduct = factory.updateProducts(Products)
 
