@@ -12,6 +12,8 @@ const AppError = require('../utils/appError');
 
 const multerStorage = multer.memoryStorage();
 
+const User = require('../model/userDashboard')
+
 
 const multerFilter = (req, file, cb) => {
 
@@ -31,8 +33,8 @@ const upload = multer({
    fileFilter: multerFilter
 })
 
-exports.uploadTourImages = upload.fields([
-   { name: 'images', maxCount: 4 }
+exports.uploadProductsImages = upload.fields([
+   { name: 'imageUrl', maxCount: 4 }
 ])
 
 exports.resizeProductImages = catchAsync(async (req, res, next) => {
@@ -60,7 +62,33 @@ exports.productsQueries = function (req, res, next) {
 
 exports.getAllProducts = factory.getAll(Products);
 
-exports.createProduct = factory.createOne(Products)
+exports.createProduct = catchAsync(async (req, res, next) => {
+   const { title, price, quantity, category } = req.body;
+   const user = req._id;
+
+   const product = new post({
+      title,
+      price,
+      quantity,
+      category,
+      creator: user,
+      imageUrl: req.file.filename
+   })
+   await product.save()
+
+   const userFind = await User.findById(user);
+
+   userFind.products.push(product)
+
+   await userFind.save()
+
+   res.status(201).json({
+      message: 'Product created successfully',
+      data: {
+         product
+      }
+   })
+})
 
 exports.getProduct = factory.getOne(Products)
 

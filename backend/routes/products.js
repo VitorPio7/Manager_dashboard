@@ -16,6 +16,8 @@ router.get("/",
 //Limpar essas rotas
 router.post("/createProduct",
     isAuth.protect,
+    productsController.uploadProductsImages,
+    productsController.resizeProductImages,
     productsController.createProduct
 );
 
@@ -26,7 +28,7 @@ router.route("/:id")
     )
     .patch(
         isAuth.protect,
-        productsController.uploadTourImages,
+        productsController.uploadProductsImages,
         productsController.resizeProductImages,
         productsController.updateProduct
     )

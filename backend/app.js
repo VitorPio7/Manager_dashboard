@@ -38,15 +38,15 @@ const limiter = rateLimit({
     message: 'Too many requests from this IP, please try again in an hour!'
 })
 
-// app.use(timeout('12s'));
+app.use(timeout('12s'));
 
-// app.use(haltOnTimedout);
+app.use(haltOnTimedout);
 
 function haltOnTimedout(req, res, next) {
     if (!req.timeout) next()
 }
 
-app.use('api', limiter)
+app.use('/api', limiter)
 
 app.use('/images', express.static(path.join(__dirname, 'images')))
 

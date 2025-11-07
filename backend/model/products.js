@@ -12,10 +12,12 @@ const products = new Schema(
             required: [true, 'Product price is required.'],
             min: [0, 'Price must be greater than or equal to 0.']
         },
-        imageUrl: {
-            type: String,
-            required: [true, 'You need to put an image.']
-        },
+        imageUrl: [
+            {
+                type: String,
+                require: [true, "You need to pass at least an image."]
+            }
+        ],
         quantity: {
             type: Number,
             required: true,

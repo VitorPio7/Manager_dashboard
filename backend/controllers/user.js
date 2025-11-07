@@ -30,7 +30,7 @@ exports.uploadUserPhoto = upload.single('photo')
 
 exports.resizeUserPhoto = catchAsync(async (req, res, next) => {
     if (!req.file) return next();
-    req.file.file = `user-${req.user.id}-${Date.now()}.jpeg`;
+    req.file.filename = `user-${req.user.id}-${Date.now()}.jpeg`;
     await sharp(req.file.buffer)
         .resize(500, 500)
         .toFormat('jpeg')
@@ -40,7 +40,7 @@ exports.resizeUserPhoto = catchAsync(async (req, res, next) => {
 })
 
 exports.updateMe = catchAsync(async (req, res, next) => {
-
+    console.log(req.user)
     if (req.body.password || req.body.passwordConfirm) {
         return next(
             new AppError(
