@@ -52,7 +52,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     const user = await User.findById(req.user.id);
     const allowed = ['name', 'email']
     const userData = req.body;
-
+   
     for (const key in userData) {
         if (allowed.includes(key)) {
             user[key] = userData[key]

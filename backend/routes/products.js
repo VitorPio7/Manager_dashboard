@@ -21,6 +21,7 @@ router.post("/createProduct",
     productsController.createProduct
 );
 
+
 router.route("/:id")
     .get(
         isAuth.protect,
@@ -28,12 +29,14 @@ router.route("/:id")
     )
     .patch(
         isAuth.protect,
+        productsController.userIsTheSameOne,
         productsController.uploadProductsImages,
         productsController.resizeProductImages,
         productsController.updateProduct
     )
     .delete(
         isAuth.protect,
+        productsController.userIsTheSameOne,
         productsController.deleteProduct
     )
 

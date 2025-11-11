@@ -14,7 +14,6 @@ const multerStorage = multer.memoryStorage();
 
 const User = require('../model/userDashboard')
 
-
 const multerFilter = (req, file, cb) => {
 
    if (file.mimetype.startsWith('image')) {
@@ -81,10 +80,10 @@ exports.createProduct = catchAsync(async (req, res, next) => {
    })
    await product.save({ validateBeforeSave: false })
 
-   console.log(user)
    const userFind = await User.findById(user);
-   console.log(userFind)
+
    userFind.products.push(product)
+
    await userFind.save({ validateBeforeSave: false })
 
    res.status(201).json({
@@ -93,6 +92,15 @@ exports.createProduct = catchAsync(async (req, res, next) => {
          product
       }
    })
+})
+
+exports.userIsTheSameOne = catchAsync(async (req, res, next) => {
+   const product_id = req.params.id
+   const userCreated = await Products.findById(product_id)
+   if (req.user.id != userCreated.creator) { 
+      return next(new AppError("You must change your products only"))
+   }
+   next()
 })
 
 exports.updateProduct = factory.updateProducts(Products)

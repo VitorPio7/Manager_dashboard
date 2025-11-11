@@ -45,7 +45,8 @@ const products = new Schema(
 )
 
 products.pre('save', async function (next) {
-     this.
+    this.changedAt = Date.now()
+    next()
 })
 products.virtual('totalPriceInStock').get(function () {
     return this.quantity * this.price
